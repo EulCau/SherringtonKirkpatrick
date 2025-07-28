@@ -2,7 +2,7 @@ import numpy as np
 
 from simulated_annealing import simulated_annealing
 
-def load_data(data_path="../data", data_name="sk30Jij.npy", data_slice=0):
+def load_data(data_path="../data/", data_name="sk30Jij.npy", data_slice=0):
 	data = np.load(data_path+data_name, allow_pickle=True)
 	return data[data_slice]
 
