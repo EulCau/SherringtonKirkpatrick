@@ -8,11 +8,13 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
 
 include_directories(include)
 
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
 add_executable(solver
-        src/main.cpp
-        src/solver.cu
+	src/main.cpp
+	src/solver.cu
 )
 
 set_target_properties(solver PROPERTIES
-        CUDA_SEPARABLE_COMPILATION ON
+	CUDA_SEPARABLE_COMPILATION ON
 )

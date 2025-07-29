@@ -1,26 +1,59 @@
+#include <fstream>
 #include <iostream>
 #include <vector>
+#include <cfloat>
 #include "solver.cuh"
+
+std::vector<unsigned int> find_min_configs(const float* energies, const size_t total_k) {
+    float min_energy = FLT_MAX;
+    for (size_t i = 0; i < total_k; ++i) {
+        if (energies[i] < min_energy)
+            min_energy = energies[i];
+    }
+
+    std::vector<unsigned int> result;
+    for (size_t i = 0; i < total_k; ++i) {
+        if (energies[i] == min_energy)
+            result.push_back(i);
+    }
+    return result;
+}
 
 int main() {
     constexpr int N = 30;
-    std::vector<float> J(N * N, 0.0f);
+    std::vector J(N * N, 0.0f);
 
-    // 填入自己的 J 数据（这里用随机数举例）
-    for (int i = 0; i < N; ++i)
-        for (int j = i + 1; j < N; ++j)
-            J[i * N + j] = (i + j) % 5 - 2;
+    std::ifstream fin("../data/sk30Jij.txt");
+    if (!fin.is_open()) {
+        std::cerr << "Error: Failed to open Jij file.\n";
+        return 1;
+    }
+
+    for (int i = 0; i < N * N; ++i) {
+        if (!(fin >> J[i])) {
+            std::cerr << "Error: Failed to read enough data from file.\n";
+            return 1;
+        }
+    }
+
+    fin.close();
 
     std::vector<int> best_S;
-    float best_E;
+    float* energies = nullptr;
 
-    solve_exhaustive_gpu(J.data(), N, best_S, best_E);
+    launch_energy_kernel(J.data(), N, energies);
+    std::vector<unsigned int> result = find_min_configs(energies, 1ULL << N);
 
-    std::cout << "Best energy: " << best_E << "\n";
-    std::cout << "Best configuration:\n";
-    for (int i = 0; i < N; ++i)
-        std::cout << best_S[i] << " ";
-    std::cout << "\n";
+    for (unsigned int i : result)
+    {
+        for (size_t j = 0; j < N; ++j)
+        {
+            std::cout << (((i >> j) & 1) ? 1 : -1) << ' ';;
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << energies[result[0]] << std::endl;
 
     return 0;
 }

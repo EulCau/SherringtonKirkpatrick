@@ -2,82 +2,56 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <float.h>
+#include <stdexcept>
 
-__device__ float compute_energy(const float* J, const int* S, int N) {
+// 假设 J 是对称的 N x N 实数矩阵，按行主序展开为一维数组
+__device__ float compute_energy(const float* J, int N, unsigned int k) {
     float energy = 0.0f;
-    for (int i = 0; i < N; ++i)
-        for (int j = i + 1; j < N; ++j)
-            energy += J[i * N + j] * S[i] * S[j];
-    return -energy;
+    for (int i = 0; i < N; ++i) {
+        int Si = ((k >> i) & 1) ? 1 : -1;
+        for (int j = i + 1; j < N; ++j) {
+            int Sj = ((k >> j) & 1) ? 1 : -1;
+            energy += J[i * N + j] * Si * Sj;
+        }
+    }
+    return energy;
 }
 
-__global__ void exhaustive_kernel(const float* J, int N, float* min_energy, int* best_config) {
-    unsigned long long idx = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned long long total = 1ULL << N;
-    if (idx >= total) return;
+__global__ void compute_energies_and_min(
+    const float* __restrict__ J,
+    int N,
+    float* __restrict__ energies)
+{
+    unsigned int k = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int total = gridDim.x * blockDim.x;
 
-    __shared__ float shared_best_energy;
-    __shared__ int shared_best_config[64];  // N <= 64
+    if (k >= (1U << N)) return;
 
-    int S[64];  // 当前配置
-    for (int i = 0; i < N; ++i)
-        S[i] = ((idx >> i) & 1) ? 1 : -1;
-
-    float E = compute_energy(J, S, N);
-
-    if (threadIdx.x == 0) {
-        shared_best_energy = FLT_MAX;
-    }
-    __syncthreads();
-
-    atomicMin((int*)&shared_best_energy, __float_as_int(E));
-    __syncthreads();
-
-    if (E == shared_best_energy) {
-        for (int i = 0; i < N; ++i)
-            shared_best_config[i] = S[i];
-    }
-
-    __syncthreads();
-
-    if (threadIdx.x == 0) {
-        *min_energy = shared_best_energy;
-        for (int i = 0; i < N; ++i)
-            best_config[i] = shared_best_config[i];
-    }
+    float energy = compute_energy(J, N, k);
+    energies[k] = energy;
 }
 
-void solve_exhaustive_gpu(const float* J, int N, std::vector<int>& best_S, float& best_energy) {
-    unsigned long long total = 1ULL << N;
-    if (total > (1ULL << 20)) {
-        throw std::runtime_error("N too large for brute-force");
-    }
+void launch_energy_kernel(const float* h_J, int N, float*& h_energies) {
+    size_t total_k = 1ULL << N;
 
     float* d_J;
-    float* d_min_energy;
-    int* d_best_config;
+    float* d_energies;
 
     cudaMalloc(&d_J, sizeof(float) * N * N);
-    cudaMalloc(&d_min_energy, sizeof(float));
-    cudaMalloc(&d_best_config, sizeof(int) * N);
+    cudaMalloc(&d_energies, sizeof(float) * total_k);
 
-    cudaMemcpy(d_J, J, sizeof(float) * N * N, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_J, h_J, sizeof(float) * N * N, cudaMemcpyHostToDevice);
 
-    int threads = 256;
-    int blocks = (total + threads - 1) / threads;
+    int threadsPerBlock = 256;
+    int blocks = (total_k + threadsPerBlock - 1) / threadsPerBlock;
 
-    exhaustive_kernel<<<blocks, threads>>>(d_J, N, d_min_energy, d_best_config);
+    compute_energies_and_min<<<blocks, threadsPerBlock>>>(d_J, N, d_energies);
     cudaDeviceSynchronize();
 
-    float min_E;
-    std::vector<int> S(N);
-    cudaMemcpy(&min_E, d_min_energy, sizeof(float), cudaMemcpyDeviceToHost);
-    cudaMemcpy(S.data(), d_best_config, sizeof(int) * N, cudaMemcpyDeviceToHost);
+    h_energies = new float[total_k];
 
-    best_S = std::move(S);
-    best_energy = min_E;
+    cudaMemcpy(h_energies, d_energies, sizeof(float) * total_k, cudaMemcpyDeviceToHost);
 
     cudaFree(d_J);
-    cudaFree(d_min_energy);
-    cudaFree(d_best_config);
+    cudaFree(d_energies);
 }
