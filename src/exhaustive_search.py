@@ -2,8 +2,10 @@ import subprocess
 import os
 
 
+solver_path = os.path.join(os.path.dirname(__file__), "exhaustive_search", "bin", "solver")
+
+
 def compute_min_energies(_=None, __=None):
-	solver_path = os.path.join(os.path.dirname(__file__), "exhaustive_search", "bin", "solver")
 
 	try:
 		result = subprocess.run(
