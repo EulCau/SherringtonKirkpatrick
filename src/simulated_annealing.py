@@ -1,7 +1,14 @@
 import numpy as np
 
+
+T_init=10.0
+T_min=1e-3
+alpha=0.98
+max_iter=10000
+
 def energy(S, J):
 	return -0.5 * S @ J @ S
+
 
 def generate_neighbor(S):
 	S_new = S.copy()
@@ -9,7 +16,8 @@ def generate_neighbor(S):
 	S_new[i] *= -1  # flip one spin
 	return S_new
 
-def compute_min_energies(J, seed=None, T_init=10.0, T_min=1e-3, alpha=0.98, max_iter=10000):
+
+def compute_min_energies(J, seed=None):
 	if seed is not None:
 		np.random.seed(seed)
 	n = J.shape[0]
