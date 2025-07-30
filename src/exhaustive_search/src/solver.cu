@@ -22,16 +22,14 @@ __global__ void compute_energies_and_min(
     float* __restrict__ energies)
 {
     unsigned int k = blockIdx.x * blockDim.x + threadIdx.x;
-    unsigned int total = gridDim.x * blockDim.x;
-
-    if (k >= (1U << N)) return;
+    if (k >= (1U << (N - 1))) return;
 
     float energy = compute_energy(J, N, k);
     energies[k] = energy;
 }
 
 void launch_energy_kernel(const float* h_J, int N, float*& h_energies) {
-    size_t total_k = 1ULL << N;
+    size_t total_k = 1ULL << (N - 1);
 
     float* d_J;
     float* d_energies;

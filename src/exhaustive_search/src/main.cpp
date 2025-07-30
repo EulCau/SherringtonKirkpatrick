@@ -60,7 +60,7 @@ int main() {
     float* energies = nullptr;
 
     launch_energy_kernel(J.data(), N, energies);
-    unsigned int result = find_min_configs(energies, 1ULL << N);
+    unsigned int result = find_min_configs(energies, 1ULL << (N - 1));
 
     for (size_t j = 0; j < N; ++j)
     {
