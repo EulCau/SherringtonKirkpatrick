@@ -48,6 +48,8 @@ The goal is to compare the performance and effectiveness of these algorithms, pr
 
 blabla
 
+---
+
 ## Project Structure
 
 ```text
