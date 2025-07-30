@@ -4,7 +4,6 @@
 #include <float.h>
 #include <stdexcept>
 
-// 假设 J 是对称的 N x N 实数矩阵，按行主序展开为一维数组
 __device__ float compute_energy(const float* J, int N, unsigned int k) {
     float energy = 0.0f;
     for (int i = 0; i < N; ++i) {
@@ -14,7 +13,7 @@ __device__ float compute_energy(const float* J, int N, unsigned int k) {
             energy += J[i * N + j] * Si * Sj;
         }
     }
-    return energy;
+    return -energy;
 }
 
 __global__ void compute_energies_and_min(
