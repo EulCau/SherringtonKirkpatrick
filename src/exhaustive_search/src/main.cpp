@@ -2,20 +2,35 @@
 #include <iostream>
 #include <vector>
 #include <cfloat>
+#include <unistd.h>
+#include <climits>
+#include <string>
 #include "solver.cuh"
 
-std::vector<unsigned int> find_min_configs(const float* energies, const size_t total_k) {
-    float min_energy = FLT_MAX;
-    for (size_t i = 0; i < total_k; ++i) {
-        if (energies[i] < min_energy)
-            min_energy = energies[i];
+std::string get_executable_dir() {
+    char path[PATH_MAX];
+    const ssize_t count = readlink("/proc/self/exe", path, PATH_MAX);
+    if (count == -1) {
+        throw std::runtime_error("Failed to read /proc/self/exe");
     }
 
-    std::vector<unsigned int> result;
+    const std::string full_path(path, count);
+    const size_t last_slash = full_path.find_last_of('/');
+    return full_path.substr(0, last_slash);
+}
+
+unsigned int find_min_configs(const float* energies, const size_t total_k) {
+    float min_energy = FLT_MAX;
+    unsigned int result = 0;
+
     for (size_t i = 0; i < total_k; ++i) {
-        if (energies[i] == min_energy)
-            result.push_back(i);
+        if (energies[i] < min_energy)
+        {
+            min_energy = energies[i];
+            result = i;
+        }
     }
+
     return result;
 }
 
@@ -23,7 +38,10 @@ int main() {
     constexpr int N = 30;
     std::vector J(N * N, 0.0f);
 
-    std::ifstream fin("../data/sk30Jij.txt");
+    std::string exec_dir = get_executable_dir();
+    std::string jij_path = exec_dir + "/../data/sk30Jij.txt";
+    std::ifstream fin(jij_path);
+
     if (!fin.is_open()) {
         std::cerr << "Error: Failed to open Jij file.\n";
         return 1;
@@ -42,18 +60,15 @@ int main() {
     float* energies = nullptr;
 
     launch_energy_kernel(J.data(), N, energies);
-    std::vector<unsigned int> result = find_min_configs(energies, 1ULL << N);
+    unsigned int result = find_min_configs(energies, 1ULL << N);
 
-    for (unsigned int i : result)
+    for (size_t j = 0; j < N; ++j)
     {
-        for (size_t j = 0; j < N; ++j)
-        {
-            std::cout << (((i >> j) & 1) ? 1 : -1) << ' ';;
-        }
-        std::cout << std::endl;
+        std::cout << (((result >> j) & 1) ? 1 : -1) << ' ';;
     }
+    std::cout << std::endl;
 
-    std::cout << energies[result[0]] << std::endl;
+    std::cout << energies[result] << std::endl;
 
     return 0;
 }
