@@ -7,7 +7,7 @@ def generate_one(N=30, seed=None, num_try=3):
 		np.random.seed(seed)
 
 	best_S = np.zeros(N).astype(int)
-	best_energy = -np.inf
+	best_energy = np.inf
 	J_plat = np.random.normal(0, 0.2, N * (N-1) // 2)
 	J = flat2J(J_plat, N)
 
@@ -35,7 +35,4 @@ def flat2J(J_flat, N=None):
 
 
 if __name__ == "__main__":
-	for _ in range(1000):
-		generate_one()
-
-	print("finished")
+	print(generate_one())

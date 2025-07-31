@@ -18,12 +18,13 @@ class SKDataset(Dataset):
 	def __getitem__(self, idx):
 		J_flat, S = self.data[idx]
 		J_flat = torch.tensor(J_flat, dtype=torch.float32)
-		S = torch.tensor(S[:-1], dtype=torch.float32)  # remove last element (fixed -1)
-		return J_flat, S
+		S_trimmed = torch.tensor(S[:-1], dtype=torch.float32)
+		S_binary = (S_trimmed + 1) / 2
+		return J_flat, S_binary
 
 
 def train_model(model, train_loader, val_loader, device, epochs=50, lr=1e-3):
-	criterion = nn.MSELoss()
+	criterion = nn.BCEWithLogitsLoss()
 	optimizer = optim.Adam(model.parameters(), lr=lr)
 
 	for epoch in range(epochs):
@@ -76,3 +77,7 @@ def main():
 	model = SKPredictor(input_dim=input_dim, output_dim=output_dim).to(device)
 
 	train_model(model, train_loader, val_loader, device)
+
+
+if __name__ == "__main__":
+	main()
