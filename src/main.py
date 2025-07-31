@@ -11,6 +11,7 @@ def main(run_exhaustive_search):
 	methods = [
 		"exhaustive_search",
 		"simulated_annealing",
+		"sdp_relaxation",
 	]
 	J = load_data()
 	best_S_with_no_change_J = np.array(
