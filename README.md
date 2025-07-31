@@ -1,14 +1,14 @@
 # Sherrington-Kirkpatrick model
 
-This project focuses on solving the ground state energy problem of the classical **Sherrington-Kirkpatrick (SK) model**. The SK model is a fundamental example of spin glass systems in statistical physics, defined by a set of interacting spin variables $S = (S_{1}, S_{2}, \dots, S_{N})$, where each spin $S_{i}$ takes values $\pm 1$.
+This project focuses on solving the ground state energy problem of the classical **Sherrington-Kirkpatrick (SK) model**. The SK model is a fundamental example of spin glass systems in statistical physics, defined by a set of interacting spin variables $S = \left(S_{1}, S_{2}, \dots, S_{N}\right)$, where each spin $S_{i}$ takes values $\pm 1$.
 
 The Hamiltonian (energy function) of the model is given by:
 
 $$
-H(S) = - \sum_{1 \leq i < j \leq N} J_{ij} S_i S_j
+H(S) = - \sum_{1 \leq i < j \leq N} J_{ij} S_{i} S_{j}
 $$
 
-Here, the coupling matrix $J = (J_{ij}) \in \mathbb{R}^{N \times N}$ represents the interaction strengths between spins. The goal is to find the spin configuration $S$ that minimizes the system energy $H(S)$.
+Here, the coupling matrix $J = \left(J_{ij}\right) \in \mathbb{R}^{N \times N}$ represents the interaction strengths between spins. The goal is to find the spin configuration $S$ that minimizes the system energy $H\left(S\right)$.
 
 ---
 
@@ -17,13 +17,13 @@ Here, the coupling matrix $J = (J_{ij}) \in \mathbb{R}^{N \times N}$ represents 
 Assuming $J$ is a symmetric matrix with zero diagonal entries, the Hamiltonian can be expressed as
 
 $$
-H(S) = -\frac{1}{2} S^{T} J S.
+H\left(S\right) = -\frac{1}{2} S^{T} J S.
 $$
 
 The problem then reduces to finding
 
 $$
-S^* = \arg \min_{S \in \{\pm 1\}^N} H(S).
+S^* = \arg \min_{S \in \{\pm 1\}^N} H\left(S\right).
 $$
 
 This problem holds significant importance in both combinatorial optimization and computational physics. It is a typical **Quadratic Unconstrained Binary Optimization (QUBO)** problem, known to be NP-hard, with computational complexity growing exponentially as the number of spins increases.
@@ -90,7 +90,7 @@ If you intend to use exhaustive search with a new dataset to find the true groun
 1. **Ensure your system meets the requirements**:
 
     * NVIDIA GPU
-    * At least **2 GiB** of GPU memory
+    * At least $\left(2^{N-29}+2\right)$ GiB of GPU memory
 
 2. **Configure the build system**:
 
