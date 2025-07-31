@@ -23,7 +23,7 @@ $$
 The problem then reduces to finding
 
 $$
-S^* = \arg \min_{S \in \{\pm 1\}^N} H\left(S\right).
+S^* = \arg \min_{S \in \left\{\pm 1\right\}^N} H\left(S\right).
 $$
 
 This problem holds significant importance in both combinatorial optimization and computational physics. It is a typical **Quadratic Unconstrained Binary Optimization (QUBO)** problem, known to be NP-hard, with computational complexity growing exponentially as the number of spins increases.
