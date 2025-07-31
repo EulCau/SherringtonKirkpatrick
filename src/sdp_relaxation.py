@@ -38,7 +38,7 @@ def solve_sdp(J, seed=None):
 		r /= np.linalg.norm(r)
 
 		projections = V.T @ r
-		S = np.sign(projections)
+		S = np.sign(projections).astype(int)
 
 		S[S == 0] = 1
 
