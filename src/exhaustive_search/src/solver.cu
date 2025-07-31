@@ -4,11 +4,14 @@
 #include <float.h>
 #include <stdexcept>
 
-__device__ float compute_energy(const float* J, int N, unsigned int k) {
+__device__ float compute_energy(const float* J, int N, unsigned int k)
+{
     float energy = 0.0f;
-    for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < N; ++i)
+    {
         int Si = ((k >> i) & 1) ? 1 : -1;
-        for (int j = i + 1; j < N; ++j) {
+        for (int j = i + 1; j < N; ++j)
+        {
             int Sj = ((k >> j) & 1) ? 1 : -1;
             energy -= J[i * N + j] * Si * Sj;
         }
@@ -28,7 +31,8 @@ __global__ void compute_energies_and_min(
     energies[k] = energy;
 }
 
-void launch_energy_kernel(const float* h_J, int N, float*& h_energies) {
+void launch_energy_kernel(const float* h_J, int N, float*& h_energies)
+{
     size_t total_k = 1ULL << (N - 1);
 
     float* d_J;
