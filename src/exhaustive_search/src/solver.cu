@@ -10,10 +10,10 @@ __device__ float compute_energy(const float* J, int N, unsigned int k) {
         int Si = ((k >> i) & 1) ? 1 : -1;
         for (int j = i + 1; j < N; ++j) {
             int Sj = ((k >> j) & 1) ? 1 : -1;
-            energy += J[i * N + j] * Si * Sj;
+            energy -= J[i * N + j] * Si * Sj;
         }
     }
-    return -energy;
+    return energy;
 }
 
 __global__ void compute_energies_and_min(
