@@ -25,12 +25,12 @@ def main(run_exhaustive_search):
 			continue
 		try:
 			module = importlib.import_module(method_name)
-			best_S, best_E = module.compute_min_energies(J, seed=1)
+			best_S, best_E = module.compute_min_energy(J, seed=42)
 			print(method_name, best_S, best_E, sep="\n", end="\n\n")
 		except ImportError:
 			print(f"error: can't find {method_name}")
 		except AttributeError:
-			print(f"error: can't find compute_min_energies for {method_name}")
+			print(f"error: can't find compute_min_energy for {method_name}")
 
 
 if __name__ == "__main__":

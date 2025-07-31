@@ -13,11 +13,11 @@ def energy(S, J):
 def generate_neighbor(S):
 	S_new = S.copy()
 	i = np.random.randint(len(S))
-	S_new[i] *= -1  # flip one spin
+	S_new[i] *= -1
 	return S_new
 
 
-def compute_min_energies(J, seed=None):
+def compute_min_energy(J, seed=None):
 	if seed is not None:
 		np.random.seed(seed)
 	n = J.shape[0]
