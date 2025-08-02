@@ -36,7 +36,6 @@ Traditional methods struggle to directly solve large-scale instances of the prob
 
 * **Exhaustive Search** (CUDA-accelerated, used solely to identify the true minimum for benchmarking purposes)
 * **Simulated Annealing**
-* **Genetic Algorithm**
 * **Semidefinite Programming (SDP) Relaxation**
 * And others
 
@@ -45,6 +44,76 @@ The goal is to compare the performance and effectiveness of these algorithms, pr
 ---
 
 ## Algorithm Details
+
+### 1. Exhaustive Search (CUDA-Accelerated, Reference Only)
+
+Due to the relatively small dimensionality of the input data (only 30 spins), it is feasible to perform an exhaustive search over all spin configurations using CUDA. This algorithm has been tested on a Linux system equipped with an NVIDIA 4060 Ti GPU. In theory, any NVIDIA GPU with **more than 4 GiB of memory** should be able to run it without modification.
+
+> **Note:** This method is *not* intended as a general-purpose algorithm. It is included solely to provide a **ground truth reference** for evaluating the accuracy of other algorithms in this project.
+
+#### Core Idea
+
+* First, note that the Hamiltonian satisfies the symmetry
+
+  $$
+  H\left(S\right) = H\left(-S\right),
+  $$
+
+  which allows us to **fix the last spin to -1**, reducing the search space by half.
+  Similarly, for consistency, all later methods **only report one representative** of such symmetric configurations, and this property will not be reiterated.
+
+* To avoid excessive data transfer and expensive configuration generation, each spin configuration is encoded as an unsigned long integer. Its binary representation (from least to most significant bit) corresponds to spins from the first to the last particle, with `0` representing spin $-1$ and `1` representing spin $+1$.
+
+* We compute the energy of all configurations in parallel, store the energies in a global array, and use a CPU reduction to find the minimum.
+  The total work is
+
+  $$
+  O\left(N^2 \cdot 2^{N-1}\right),
+  $$
+
+  while the parallel span is
+
+  $$
+  O\left(N^2\right).
+  $$
+
+  Although CUDA threads may not fully reduce the time complexity to $O\left(N^2\right)$ due to hardware constraints, thread multiplexing ensures the computation remains within practical bounds. The total expected time is on the order of **10 million operations**, which is well within the processing capability of modern GPUs.
+
+* The memory usage consists of storing the coupling matrix ($N^2$ floats) and the energy array ($2^{N-1}$ floats), totaling roughly **2 GiB** of VRAM. With additional overhead, a **4 GiB GPU** is sufficient.
+
+In practice, this method takes only **1–2 seconds** to find the true ground state configuration.
+
+### 2. Simulated Annealing
+
+Among all the implemented algorithms, Simulated Annealing is arguably the simplest, most classical, and most physically intuitive approach for this problem. It uses a gradually decreasing temperature variable `T` to control the acceptance probability of energy-increasing transitions. This mechanism allows the algorithm to more easily escape local minima in the early stages and to converge toward a local optimum in the later stages. This behavior mirrors the physical intuition that, in the early phase, a system is thermally unstable and more likely to escape from local energy minima due to thermal fluctuations.
+
+#### Core Idea
+
+* The algorithm maintains a temperature $T$ that decays over time. At each iteration, a new state $S^*$ is generated from the current state $S$ by flipping a randomly selected spin (i.e., changing its sign).
+
+* The energy difference is computed as
+
+  $$
+  \Delta E = H\left(S^*\right) - H\left(S\right),
+  $$
+
+  and the new state is accepted with probability
+
+  $$
+  P = \exp\left(-\frac{\Delta E}{T}\right).
+  $$
+
+  When $\Delta E < 0$, $P > 1$, so the new state is always accepted.
+
+* The temperature $T$ typically follows an exponential decay schedule, for example:
+
+  $$
+  T \leftarrow \alpha T,\quad \alpha < 1.
+  $$
+
+  Alternatively, more complex decay schemes can be used.
+
+* In fact, as will be discussed in the **"Other Methods"** section, we plan to explore approaches where a neural network dynamically determines <font color='red'> whether to accept new states and/or how to decay the temperature. </font>
 
 blabla
 
