@@ -7,6 +7,7 @@ alpha=0.98
 max_iter=10000
 
 def energy(S, J):
+	S = S.astype(np.float32)
 	return -0.5 * S @ J @ S
 
 

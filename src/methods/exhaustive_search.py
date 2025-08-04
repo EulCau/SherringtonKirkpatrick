@@ -3,7 +3,7 @@ import os
 
 import numpy as np
 
-solver_path = os.path.join(os.path.dirname(__file__), "exhaustive_search", "bin", "solver")
+solver_path = os.path.join(os.path.dirname(__file__), "..", "exhaustive_search", "bin", "solver")
 
 
 def compute_min_energy(_=None, seed=None):

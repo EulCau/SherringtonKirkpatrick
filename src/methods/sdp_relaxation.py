@@ -3,7 +3,12 @@ import numpy as np
 import cvxpy as cp
 
 
-num_rounds = 100
+num_rounds = 500
+
+
+def energy(S, J):
+	S = S.astype(np.float32)
+	return -0.5 * S @ J @ S
 
 
 def solve_sdp(J, seed=None):
@@ -38,15 +43,15 @@ def solve_sdp(J, seed=None):
 		r /= np.linalg.norm(r)
 
 		projections = V.T @ r
-		S = np.sign(projections).astype(int)
+		S_new = np.sign(projections).astype(int)
 
-		S[S == 0] = 1
+		S_new[S_new == 0] = 1
 
-		energy = -S @ J @ S / 2
+		E_new = energy(S_new, J)
 
-		if energy < best_E:
-			best_E = energy
-			best_S = S
+		if E_new < best_E:
+			best_E = E_new
+			best_S = S_new
 
 	return best_S, best_E
 
