@@ -83,6 +83,24 @@ Due to the relatively small dimensionality of the input data (only 30 spins), it
 
 In practice, this method takes only **1–2 seconds** to find the true ground state configuration.
 
+#### results
+
+For the first instance in the provided dataset `sk30Jij.npy` (hereafter referred to as the *given data*), the spin configuration that yields the lowest energy is:
+
+$$
+\begin{aligned}
+    &-1, +1, -1, -1, -1, -1, +1, +1, -1, -1, -1, +1, -1, +1, -1, \\
+    &-1, -1, +1, +1, -1, -1, +1, +1, -1, +1, -1, -1, -1, -1, -1
+\end{aligned}
+$$
+
+with a corresponding minimum energy of -21.6217.
+
+Since this result is theoretically exact with 100% accuracy, no further datasets were tested using this method.
+
+#### generate data
+
+
 ### 2. Simulated Annealing
 
 Among all the implemented algorithms, Simulated Annealing is arguably the simplest, most classical, and most physically intuitive approach for this problem. It uses a gradually decreasing temperature variable `T` to control the acceptance probability of energy-increasing transitions. This mechanism allows the algorithm to more easily escape local minima in the early stages and to converge toward a local optimum in the later stages. This behavior mirrors the physical intuition that, in the early phase, a system is thermally unstable and more likely to escape from local energy minima due to thermal fluctuations.
@@ -114,6 +132,60 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
   Alternatively, more complex decay schemes can be used.
 
 * In fact, as will be discussed in the **"Other Methods"** section, we plan to explore approaches where a neural network dynamically determines <font color='red'> whether to accept new states and/or how to decay the temperature. </font>
+
+#### results
+
+Experimental results show that when the random seed is set to `1`, the algorithm can reproduce the true optimal solution on the given data. However, using the commonly adopted seed value of `42` does not yield the global optimum.
+
+To evaluate the practical accuracy of the method, we tested it on a dataset of 10,000 instances, which are almost certainly at their ground states (details of the data generation process are provided later). The method achieved an accuracy of only **24.8%**.
+
+Nevertheless, due to the inherent randomness of the algorithm, we can significantly improve accuracy by **repeating the optimization multiple times** and selecting the lowest energy result. Therefore, this method remains a viable and acceptable approach in practice.
+
+### 3. Semidefinite Programming (SDP) Relaxation
+
+This method relaxes the original combinatorial optimization problem into an SDP problem, which is a convex optimization problem and hence polynomial-time solvable under fixed precision. The relaxed problem is then repeatedly projected back into the feasible set of the original discrete problem using randomized rounding, and the lowest-energy solution among all projections is selected as the final output.
+
+#### Core Idea
+
+* First, introduce a matrix variable $X = SS^{T}$, then the objective function becomes
+
+  $$
+  H\left(S\right) = S^{T}JS = \mathrm{Tr}\left(JSS^{T}\right) = \mathrm{Tr}\left(JX\right)
+  $$
+
+  The original optimization problem is thus rewritten as:
+
+  $$
+  \begin{aligned}
+  \min_{X \in \mathbb{R}^{n \times n}} \quad & \mathrm{Tr}(JX) \\
+  \text{s.t.} \quad & \text{rank}(X) = 1, \quad X_{ii} = 1 \ \forall i, \quad X \succeq 0
+  \end{aligned}
+  $$
+* Then, we relax the rank constraint $\text{rank}\left(X\right) = 1$, and keep only the diagonal constraints and the positive semidefiniteness constraint. This yields a convex SDP relaxation.
+* Solve the relaxed SDP using `cvxpy` or any SDP solver to obtain $X$, then perform a Cholesky decomposition or eigendecomposition to factorize $X = VV^{T}$, where $V \in \mathbb{R}^{n \times r}$.
+* Although $V$ does not yield a feasible spin configuration directly, it provides a lower bound on the ground state energy.
+* To recover a binary spin vector $\hat{S} \in \{-1, +1\}^n$, sample a Gaussian random vector $g \sim \mathcal{N}(0, I_r)$ and set
+
+  $$
+  \hat{S}_i = \text{sign}(V_i^{T}g)
+  $$
+* Repeat the above random projection step `num_rounds` times, and return the spin configuration with the lowest energy among all rounds.
+
+#### results
+
+On the *given data*, using multiple random seeds consistently yields the true optimal solution. To evaluate the general applicability of this method, we also conduct tests on a large dataset. The results are as follows:
+
+| `num_rounds` | Accuracy |
+|--------------|----------|
+| 100          | 72.5%    |
+| 500          | 88.0%    |
+| 1000         | 92.7%    |
+
+In our experiments, setting `num_rounds = 100` yields an accuracy of approximately **72.5%**. Theoretically, increasing `num_rounds` to 1000 should reduce the error rate to less than $3 \times 10^{-6}$ if each round is independent and identically distributed. However, the observed accuracy is only **92.7%**, suggesting that in some instances the SDP relaxation introduces the integrality gap.
+
+In our case (i.e., finding ground states of the Ising model), this integrality gap is not analytically bounded, but empirical evidence clearly suggests that for some instances, the SDP solution lies too far from any valid spin configuration, making it difficult for random projections to recover the true ground state, and thereby limiting the achievable accuracy.
+
+#### Generate Test Data
 
 blabla
 
