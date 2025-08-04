@@ -2,9 +2,8 @@
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
 #include <float.h>
-#include <stdexcept>
 
-extern "C" __device__ float compute_energy(const float* J, int N, unsigned int k)
+__device__ float compute_energy(const float* J, int N, unsigned int k)
 {
     float energy = 0.0f;
     for (int i = 0; i < N; ++i)
@@ -19,7 +18,7 @@ extern "C" __device__ float compute_energy(const float* J, int N, unsigned int k
     return energy;
 }
 
-extern "C" __global__ void compute_energies_and_min(
+__global__ void compute_energies_and_min(
     const float* __restrict__ J,
     int N,
     float* __restrict__ energies)
@@ -31,7 +30,7 @@ extern "C" __global__ void compute_energies_and_min(
     energies[k] = energy;
 }
 
-extern "C" __global__ void reduce_min_energy(const float* energies, size_t total_k, float* min_energy, unsigned int* min_index) {
+__global__ void reduce_min_energy(const float* energies, size_t total_k, float* min_energy, unsigned int* min_index) {
     extern __shared__ float sdata[];
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * blockDim.x * 2 + threadIdx.x;
@@ -70,7 +69,7 @@ extern "C" __global__ void reduce_min_energy(const float* energies, size_t total
     }
 }
 
-extern "C" __global__ void final_reduce_min(const float* block_min_energy, const unsigned int* block_min_index, int num_blocks, unsigned int* global_min_index) {
+__global__ void final_reduce_min(const float* block_min_energy, const unsigned int* block_min_index, int num_blocks, unsigned int* global_min_index) {
     float min_val = 1e20f;
     unsigned int min_idx = 0;
     for (int i = 0; i < num_blocks; ++i) {
@@ -82,7 +81,7 @@ extern "C" __global__ void final_reduce_min(const float* block_min_energy, const
     *global_min_index = min_idx;
 }
 
-extern "C" void launch_energy_kernel(const float* h_J, int N, unsigned int* h_min_index)
+void launch_energy_kernel(const float* h_J, int N, unsigned int* h_min_index)
 {
     size_t total_k = 1ULL << (N - 1);
 
