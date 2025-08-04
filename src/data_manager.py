@@ -25,7 +25,7 @@ def data_generator(data_path="../data", data_name="generated_data.pkl", N=30, nu
 
 
 def generate_one(N=30):
-	J_flat = np.random.normal(0, 0.2, N * (N-1) // 2)
+	J_flat = np.random.normal(0, 0.2, N * (N-1) // 2).astype(np.float32)
 	best_S, best_E = es.compute_min_energy(flat2J(J_flat, N))
 	return J_flat, best_S, best_E
 
