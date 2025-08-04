@@ -137,7 +137,7 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
 
 Experimental results show that when the random seed is set to `1`, the algorithm can reproduce the true optimal solution on the given data. However, using the commonly adopted seed value of `42` does not yield the global optimum.
 
-To evaluate the practical accuracy of the method, we tested it on a dataset of 10,000 instances, which are almost certainly at their ground states (details of the data generation process are provided later). The method achieved an accuracy of only **24.8%**.
+To evaluate the practical accuracy of the method, we tested it on a dataset of 10,000 instances, which are almost certainly at their ground states (details of the data generation process are provided later). The method achieved an accuracy of only **18.1%**.
 
 Nevertheless, due to the inherent randomness of the algorithm, we can significantly improve accuracy by **repeating the optimization multiple times** and selecting the lowest energy result. Therefore, this method remains a viable and acceptable approach in practice.
 
@@ -175,13 +175,11 @@ This method relaxes the original combinatorial optimization problem into an SDP 
 
 On the *given data*, using multiple random seeds consistently yields the true optimal solution. To evaluate the general applicability of this method, we also conduct tests on a large dataset. The results are as follows:
 
-| `num_rounds` | Accuracy |
-|--------------|----------|
-| 100          | 72.5%    |
-| 500          | 88.0%    |
-| 1000         | 92.7%    |
+| `num_rounds` |  100  |  500  | 1000  | 10000 |
+|:------------:|:-----:|:-----:|:-----:|:-----:|
+|   Accuracy   | 62.8% | 74.1% | 76.3% | 79.9% |
 
-In our experiments, setting `num_rounds = 100` yields an accuracy of approximately **72.5%**. Theoretically, increasing `num_rounds` to 1000 should reduce the error rate to less than $3 \times 10^{-6}$ if each round is independent and identically distributed. However, the observed accuracy is only **92.7%**, suggesting that in some instances the SDP relaxation introduces the integrality gap.
+In our experiments, setting `num_rounds = 100` yields an accuracy of approximately **62.8%**. Theoretically, increasing `num_rounds` to 1000 should reduce the error rate to less than $5 \times 10^{-5}$ if each round is independent and identically distributed. However, the observed accuracy is only **76.3%**, suggesting that in some instances (about $\frac{1}{5}$ to $\frac{1}{4}$) the SDP relaxation introduces the integrality gap.
 
 In our case (i.e., finding ground states of the Ising model), this integrality gap is not analytically bounded, but empirical evidence clearly suggests that for some instances, the SDP solution lies too far from any valid spin configuration, making it difficult for random projections to recover the true ground state, and thereby limiting the achievable accuracy.
 
