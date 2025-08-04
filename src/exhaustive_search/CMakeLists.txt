@@ -13,10 +13,19 @@ include_directories(include)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 add_executable(solver
-	src/main.cpp
+	src/result.cpp
 	src/solver.cu
 )
 
 set_target_properties(solver PROPERTIES
+	CUDA_SEPARABLE_COMPILATION ON
+)
+
+add_executable(generate_data
+	src/generate_data.cpp
+	src/solver.cu
+)
+
+set_target_properties(generate_data PROPERTIES
 	CUDA_SEPARABLE_COMPILATION ON
 )

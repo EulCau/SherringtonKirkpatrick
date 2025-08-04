@@ -21,21 +21,19 @@ std::string get_executable_dir()
     return full_path.substr(0, last_slash);
 }
 
-unsigned int find_min_configs(const float* energies, const size_t total_k)
+float compute_energy_cpu(const float* J, int N, unsigned int k)
 {
-    float min_energy = FLT_MAX;
-    unsigned int result = 0;
-
-    for (size_t i = 0; i < total_k; ++i)
+    float energy = 0.0f;
+    for (int i = 0; i < N; ++i)
     {
-        if (energies[i] < min_energy)
+        int Si = ((k >> i) & 1) ? 1 : -1;
+        for (int j = i + 1; j < N; ++j)
         {
-            min_energy = energies[i];
-            result = i;
+            int Sj = ((k >> j) & 1) ? 1 : -1;
+            energy -= J[i * N + j] * Si * Sj;
         }
     }
-
-    return result;
+    return energy;
 }
 
 int main()
@@ -65,18 +63,19 @@ int main()
     fin.close();
 
     std::vector<int> best_S;
-    float* energies = nullptr;
+    unsigned int idx = 0;
 
-    launch_energy_kernel(J.data(), N, energies);
-    unsigned int result = find_min_configs(energies, 1ULL << (N - 1));
+    launch_energy_kernel(J.data(), N, &idx);
+    float min_energy = compute_energy_cpu(J.data(), N, idx);
 
     for (size_t j = 0; j < N; ++j)
     {
-        std::cout << (((result >> j) & 1) ? 1 : -1) << ' ';;
+        std::cout << (((idx >> j) & 1) ? 1 : -1) << ' ';
+
     }
     std::cout << std::endl;
 
-    std::cout << energies[result] << std::endl;
+    std::cout << min_energy << std::endl;
 
     return 0;
 }
