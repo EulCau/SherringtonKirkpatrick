@@ -3,7 +3,7 @@ import os.path
 
 import numpy as np
 
-data_path = "../data"
+data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data")
 data_name="sk30Jij.npy"
 data_slice=0
 run_exhaustive_search = False

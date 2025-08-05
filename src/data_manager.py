@@ -5,8 +5,8 @@ import numpy as np
 
 from methods import exhaustive_search as es
 
-
-def data_generator(data_path="../data", data_name="generated_data.pkl", N=30, num = 10000):
+_data_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data")
+def data_generator(data_path=_data_path, data_name="generated_data.pkl", N=30, num = 10000):
 	data = []
 
 	print("Starting data generation ...")
@@ -18,7 +18,7 @@ def data_generator(data_path="../data", data_name="generated_data.pkl", N=30, nu
 		data.append(generate_one(N))
 
 	print(f"Finished generating data, saving to {data_path}/{data_name}")
-	save_data(data, os.path.join(data_path, data_name))
+	save_data(data, data_path, data_name)
 	print(f"Finished saving to {data_path}/{data_name}")
 
 	return data
@@ -30,7 +30,7 @@ def generate_one(N=30):
 	return J_flat, best_S, best_E
 
 
-def load_generated_data(data_path="../data", data_name="generated_data.pkl"):
+def load_generated_data(data_path=_data_path, data_name="generated_data.pkl"):
 	filename = os.path.join(data_path, data_name)
 	if os.path.exists(filename):
 		with open(filename, "rb") as f:
@@ -38,7 +38,8 @@ def load_generated_data(data_path="../data", data_name="generated_data.pkl"):
 	return None
 
 
-def save_data(data, filename="../data/generated_data.pkl"):
+def save_data(data, data_path=_data_path, data_name="generated_data.pkl"):
+	filename = os.path.join(data_path, data_name)
 	with open(filename, "wb") as f:
 		pickle.dump(data, f)  # type: ignore[arg-type]
 	print(f"data saved to {filename}")

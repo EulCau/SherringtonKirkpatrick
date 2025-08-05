@@ -1,4 +1,5 @@
 import os
+import shutil
 
 import numpy as np
 import pycuda.autoinit
@@ -6,6 +7,10 @@ import pycuda.driver as cuda
 from pycuda.compiler import SourceModule
 
 nvcc_path = "/usr/local/cuda-12.8/bin/nvcc"
+
+nvcc_find = shutil.which("nvcc")
+if nvcc_find is not None:
+	nvcc_path = "nvcc"
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 cu_path = os.path.join(script_dir, "..", "exhaustive_search", "src")
@@ -109,7 +114,7 @@ def idx2result(J=None, idx=None, N=None):
 
 
 if __name__ == "__main__":
-	data_path = "../../data"
+	data_path = os.path.join(script_dir, "../../data")
 	data_name="sk30Jij.npy"
 	data_slice=0
 

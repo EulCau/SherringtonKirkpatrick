@@ -1,4 +1,5 @@
 import importlib
+import os.path
 
 import numpy as np
 
@@ -6,7 +7,7 @@ import data_manager as dm
 
 
 def test_method():
-	data_path = "../data"
+	data_path = os.path.join(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data"))
 	data_name = "generated_data.pkl"
 	data = dm.load_generated_data(data_path, data_name)
 	if data is None:
