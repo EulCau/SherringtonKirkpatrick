@@ -3,7 +3,7 @@ import numpy as np
 import cvxpy as cp
 
 
-num_rounds = 500
+_num_rounds = 500
 
 
 def energy(S, J):
@@ -11,7 +11,7 @@ def energy(S, J):
 	return -0.5 * S @ J @ S
 
 
-def solve_sdp(J, seed=None):
+def solve_sdp(J, seed=None, num_rounds=_num_rounds):
 	if seed is not None:
 		np.random.seed(seed)
 
@@ -56,11 +56,12 @@ def solve_sdp(J, seed=None):
 	return best_S, best_E
 
 
-def compute_min_energy(J, seed=None):
+def compute_min_energy(J, seed=None, num_rounds=_num_rounds, **kwargs):
+	_ = kwargs
 	n=J.shape[0]
 	if n <= 100:
 		with warnings.catch_warnings():
 			warnings.simplefilter("ignore")
-			return solve_sdp(J, seed)
+			return solve_sdp(J, seed, num_rounds)
 	else:
-		return solve_sdp(J, seed)
+		return solve_sdp(J, seed, num_rounds)

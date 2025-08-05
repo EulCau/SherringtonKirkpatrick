@@ -1,11 +1,6 @@
 import numpy as np
 
 
-T_init=10.0
-T_min=1e-3
-alpha=0.98
-max_iter=10000
-
 def energy(S, J):
 	S = S.astype(np.float32)
 	return -0.5 * S @ J @ S
@@ -18,11 +13,18 @@ def generate_neighbor(S):
 	return S_new
 
 
-def compute_min_energy(J, seed=None):
+def compute_min_energy(J, seed=None, S_init=None, **kwargs):
+	T_init = kwargs.get('T_init', 10.0)
+	T_min = kwargs.get('T_min', 1e-3)
+	alpha = kwargs.get('alpha', 0.98)
+	max_iter = kwargs.get('max_iter', 10000)
 	if seed is not None:
 		np.random.seed(seed)
 	n = J.shape[0]
-	S = np.random.choice([-1, 1], size=n)
+	if S_init is None:
+		S = np.random.choice([-1, 1], size=n)
+	else:
+		S = S_init
 	E = energy(S, J)
 
 	T = T_init

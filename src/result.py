@@ -12,6 +12,7 @@ methods = [
 	("exhaustive_search", None),
 	("simulated_annealing", 1),
 	("sdp_relaxation", 42),
+	("hybrid_strategy", 42),
 ]
 
 

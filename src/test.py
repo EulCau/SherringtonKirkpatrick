@@ -1,5 +1,6 @@
 import importlib
 import os.path
+import time
 
 import numpy as np
 
@@ -17,12 +18,15 @@ def test_method():
 	methods = [
 		"simulated_annealing",
 		"sdp_relaxation",
+		"hybrid_strategy",
 	]
 
 	accuracy = np.zeros(len(methods))
-	for J_flat, _, best_E in data:
-		J = dm.flat2J(J_flat)
-		for i in range(len(methods)):
+	time_takes = np.zeros(len(methods))
+	for i in range(len(methods)):
+		start = time.perf_counter()
+		for J_flat, _, best_E in data:
+			J = dm.flat2J(J_flat)
 			method_name = methods[i]
 			try:
 				module = importlib.import_module(f"methods.{method_name}")
@@ -33,10 +37,14 @@ def test_method():
 				print(f"error: can't find {method_name}")
 			except AttributeError:
 				print(f"error: can't find compute_min_energy for {method_name}")
+		end = time.perf_counter()
+		time_takes[i] = end - start
 
 	for i in range(len(methods)):
-		print(f"{methods[i]}: {accuracy[i] / len(data)}")
+		print(f"{methods[i]}: {accuracy[i] / len(data)}; {time_takes[i] / len(data) * 1000:.3f}ms")
 
 
 if __name__ == "__main__":
+	seed = 42
+	np.random.seed(seed)
 	test_method()
