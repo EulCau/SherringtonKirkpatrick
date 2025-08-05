@@ -87,14 +87,23 @@ def find_min_idx(J):
 	return int(h_min_index[0])
 
 
-def idx2result(J, idx):
-	N = J.shape[0]
+def idx2result(J=None, idx=None, N=None):
+	condition_a = J is not None and J.ndim == 2 and J.shape[0] == J.shape[1]
+	condition_b = N is not None
+	assert condition_a or condition_b, "N cannot be determined"
+	assert idx is not None, "idx is needed"
+
+	if not condition_b:
+		N = J.shape[0]
 	best_S = np.zeros(N, dtype=J.dtype)
 
 	for i in range(N):
 		best_S[i] = 1 if (idx >> i & 1) else -1
 
-	best_E = - best_S @ J @ best_S / 2
+	if not condition_a:
+		best_E = None
+	else:
+		best_E = - best_S @ J @ best_S / 2
 
 	return best_S.astype(int), best_E
 
