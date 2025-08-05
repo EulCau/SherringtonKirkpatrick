@@ -25,7 +25,7 @@ def test_method():
 			method_name = methods[i]
 			try:
 				module = importlib.import_module(f"methods.{method_name}")
-				__, compute_E = module.compute_min_energy(J)
+				compute_E = module.compute_min_energy(J)[1]
 				if np.isclose(compute_E, best_E, atol=1e-5):
 					accuracy[i] += 1
 			except ImportError:
