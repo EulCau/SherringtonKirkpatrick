@@ -1,12 +1,11 @@
-import pycuda.autoinit
-import pycuda.driver as cuda
-from pycuda.compiler import SourceModule
-import subprocess
 import os
 
 import numpy as np
+import pycuda.autoinit
+import pycuda.driver as cuda
+from pycuda.compiler import SourceModule
 
-solver_path = os.path.join(os.path.dirname(__file__), "..", "exhaustive_search", "bin", "solver")
+nvcc_path = "/usr/local/cuda-12.8/bin/nvcc"
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 cu_path = os.path.join(script_dir, "..", "exhaustive_search", "src")
@@ -16,7 +15,7 @@ with open(os.path.join(cu_path, "solver.cu"), "r") as f:
 	mod = SourceModule(
 		kernel_code,
 		options=[f"-I{include_path}"],
-		nvcc="/usr/local/cuda-12.8/bin/nvcc"
+		nvcc=nvcc_path
 	)
 
 compute_energies_and_min = mod.get_function("compute_energies_and_min")
@@ -106,8 +105,8 @@ if __name__ == "__main__":
 	data_slice=0
 
 	data = np.load(os.path.join(data_path, data_name), allow_pickle=True)
-	J =  data[data_slice]
+	_J =  data[data_slice]
 
-	_best_S, _best_E = compute_min_energy(J)
+	_best_S, _best_E = compute_min_energy(_J)
 
 	print(_best_S, _best_E, sep="\n")
