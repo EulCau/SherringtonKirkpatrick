@@ -188,7 +188,7 @@ On the *given data*, using multiple random seeds consistently yields the true op
 
 | `num_rounds` |  100  |  500  | 1000  | 10000 |
 |:------------:|:-----:|:-----:|:-----:|:-----:|
-|   Accuracy   | 62.8% | 74.1% | 76.3% | 79.9% |
+|   Accuracy   | 62.8% | 74.4% | 76.3% | 79.9% |
 
 In our experiments, setting `num_rounds = 100` yields an accuracy of approximately **62.8%**. Theoretically, increasing `num_rounds` to 1000 should reduce the error rate to less than $5 \times 10^{-5}$ if each round is independent and identically distributed. However, the observed accuracy is only **76.3%**, suggesting that in some instances (about $\frac{1}{5}$ to $\frac{1}{4}$) the SDP relaxation introduces the integrality gap.
 
@@ -206,7 +206,7 @@ blabla
 
 | `T_init` | 10.0  |  1.0  |  0.5  |  0.1  |
 |:--------:|:-----:|:-----:|:-----:|:-----:|
-| Accuracy | 78.6% | 83.2% | 83.6% | 00.0% |
+| Accuracy | 78.6% | 83.2% | 83.6% | 82.4% |
 
 ---
 
