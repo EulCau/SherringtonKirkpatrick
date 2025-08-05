@@ -194,6 +194,20 @@ In our experiments, setting `num_rounds = 100` yields an accuracy of approximate
 
 In our case (i.e., finding ground states of the Ising model), this integrality gap is not analytically bounded, but empirical evidence clearly suggests that for some instances, the SDP solution lies too far from any valid spin configuration, making it difficult for random projections to recover the true ground state, and thereby limiting the achievable accuracy.
 
+### 4. hybrid strategy
+
+#### Core Idea
+
+blabla
+
+#### Result
+
+`num_round` is set to 500
+
+| `T_init` | 10.0  |  1.0  |  0.5  |  0.1  |
+|:--------:|:-----:|:-----:|:-----:|:-----:|
+| Accuracy | 78.6% | 83.2% | 83.6% | 00.0% |
+
 ---
 
 ## Project Structure
