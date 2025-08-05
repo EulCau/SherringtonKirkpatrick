@@ -17,7 +17,7 @@ methods = [
 
 best_S_with_given_J = np.array(
 	[-1,1,-1,-1,-1,-1,1,1,-1,-1,-1,1,-1,1,-1,-1,-1,1,1,-1,-1,1,1,-1,1,-1,-1,-1,-1,-1])
-best_E_with_given_J = -21.6217
+best_E_with_given_J = -21.62167
 information = "Warning: The exhaustive search did not execute; "\
 			  "the results are based solely on the initially provided first set from the given sets."
 
