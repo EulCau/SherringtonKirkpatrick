@@ -1,0 +1,339 @@
+\documentclass{article}
+\usepackage{ctex}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{dirtree}
+\geometry{a4paper, left=2cm, right=2cm, top=3cm, bottom=4cm}
+
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single
+}
+\lstset{style=mystyle}
+
+\title{Sherrington-Kirkpatrick model}
+\author{Xing Liu}
+\date{}
+\begin{document}
+
+\maketitle
+
+\section*{Sherrington-Kirkpatrick model}
+
+This project focuses on solving the ground state energy problem of the classical \textbf{Sherrington-Kirkpatrick (SK) model}. The SK model is a fundamental example of spin glass systems in statistical physics, defined by a set of interacting spin variables $S = \left(S_{1}, S_{2}, \dots, S_{N}\right)$, where each spin $S_{i}$ takes values $\pm 1$.
+
+The Hamiltonian (energy function) of the model is given by:
+
+\[
+H(S) = - \sum_{1 \leq i < j \leq N} J_{ij} S_{i} S_{j}
+\]
+
+Here, the coupling matrix $J = \left(J_{ij}\right) \in \mathbb{R}^{N \times N}$ represents the interaction strengths between spins. The goal is to find the spin configuration $S$ that minimizes the system energy $H\left(S\right)$.
+
+\section*{Mathematical Abstraction}
+
+Assuming $J$ is a symmetric matrix with zero diagonal entries, the Hamiltonian can be expressed as
+
+\[
+H\left(S\right) = -\frac{1}{2} S^{T} J S.
+\]
+
+The problem then reduces to finding
+
+\[
+S^{*} = \arg \min_{S \in \left\{\pm 1\right\}^N} H\left(S\right).
+\]
+
+This problem holds significant importance in both combinatorial optimization and computational physics. It is a typical \textbf{Quadratic Unconstrained Binary Optimization (QUBO)} problem, known to be NP-hard, with computational complexity growing exponentially as the number of spins increases.
+
+\section*{Algorithm Selection}
+
+Traditional methods struggle to directly solve large-scale instances of the problem. Therefore, this project implements multiple optimization algorithms, including:
+
+\begin{itemize}
+    \item \textbf{Exhaustive Search} (CUDA-accelerated)
+    \item \textbf{Simulated Annealing}
+    \item \textbf{Semidefinite Programming (SDP) Relaxation}
+    \item \textbf{Hybrid Strategy}
+    \item And others
+\end{itemize}
+
+The goal is to compare the performance and effectiveness of these algorithms, providing a solid foundation for subsequent theoretical analysis and practical applications.
+
+\section*{Algorithm Details}
+
+\subsection*{1. Exhaustive Search (CUDA-Accelerated, Reference Only)}
+
+Due to the relatively small dimensionality of the input data (only 30 spins), it is feasible to perform an exhaustive search over all spin configurations using CUDA. This algorithm has been tested on a Linux system equipped with an NVIDIA 4060 Ti GPU. In theory, any NVIDIA GPU with \textbf{more than 4 GiB of memory} should be able to run it without modification.
+
+\begin{quote}
+\textbf{Note:} This method is \textit{not} intended as a general-purpose algorithm. It is included solely to provide a \textbf{ground truth reference} for evaluating the accuracy of other algorithms in this project.
+\end{quote}
+
+\subsubsection*{Core Idea}
+
+\begin{itemize}
+    \item First, note that the Hamiltonian satisfies the symmetry
+    \[
+    H\left(S\right) = H\left(-S\right),
+    \]
+    which allows us to \textbf{fix the last spin to -1}, reducing the search space by half. Similarly, for consistency, all later methods \textbf{only report one representative} of such symmetric configurations, and this property will not be reiterated.
+    
+    \item To avoid excessive data transfer and expensive configuration generation, each spin configuration is encoded as an unsigned long integer. Its binary representation (from least to most significant bit) corresponds to spins from the first to the last particle, with `0` representing spin $-1$ and `1` representing spin $+1$.
+    
+    \item We compute the energy of all configurations in parallel, store the energies in a global array, and use a CPU reduction to find the minimum. The total work is
+    \[
+    O\left(N^2 \cdot 2^{N-1}\right),
+    \]
+    while the parallel span is
+    \[
+    O\left(N^2\right).
+    \]
+    Although CUDA threads may not fully reduce the time complexity to $O\left(N^2\right)$ due to hardware constraints, thread multiplexing ensures the computation remains within practical bounds. The total expected time is on the order of \textbf{10 million operations}, which is well within the processing capability of modern GPUs.
+    
+    \item The memory usage consists of storing the coupling matrix ($N^2$ floats) and the energy array ($2^{N-1}$ floats), totaling roughly \textbf{2 GiB} of VRAM. With additional overhead, a \textbf{4 GiB GPU} is sufficient.
+\end{itemize}
+
+In practice, this method takes less than a second to find the true ground state configuration.
+
+\subsubsection*{Results}
+
+For the first instance in the provided dataset \texttt{sk30Jij.npy} (hereafter referred to as the \textit{given data}), the spin configuration that yields the lowest energy is:
+
+\[
+\begin{aligned}
+&-1, +1, -1, -1, -1, -1, +1, +1, -1, -1, -1, +1, -1, +1, -1, \\
+&-1, -1, +1, +1, -1, -1, +1, +1, -1, +1, -1, -1, -1, -1, -1
+\end{aligned}
+\]
+
+with a corresponding minimum energy of -21.6217.
+
+Since this result is theoretically exact with 100\% accuracy, no further datasets were tested using this method. From the data generation process, we can observe that the time required to find an optimal solution is approximately between 300 and 600 milliseconds.
+
+\subsubsection*{Generate Test Data}
+
+To evaluate the accuracy of subsequent methods, we generate a large number of spin glass instances with known optimal solutions. Since the coupling matrix $J$ is symmetric with zero diagonal, only its upper triangular part (excluding the diagonal) needs to be specified, containing $\frac{N(N-1)}{2}$ elements.
+
+These elements are independently sampled from the Gaussian distribution:
+
+\[J_{ij} \sim \mathcal{N}(0, 0.2^2), \quad \text{for } i < j.\]
+
+We generate 10,000 pairs of $J$ and their corresponding ground truth optimal spin configurations $S^*$. For storage:
+
+\begin{itemize}
+    \item The upper triangular part of each $J$ is flattened into a 1D array of length $\frac{N(N-1)}{2}$;
+    \item Each $S^{*}$ is stored as an integer, as described in the second point of the \textit{Core Idea} section;
+    \item The decoding procedures are implemented in the functions \texttt{flat2J} and \texttt{idx2result}, which reconstruct the full $J$ matrix and the corresponding spin configuration from the encoded format.
+\end{itemize}
+
+\subsection*{2. Simulated Annealing}
+
+Among all the implemented algorithms, Simulated Annealing is arguably the simplest, most classical, and most physically intuitive approach for this problem. It uses a gradually decreasing temperature variable \texttt{T} to control the acceptance probability of energy-increasing transitions. This mechanism allows the algorithm to more easily escape local minima in the early stages and to converge toward a local optimum in the later stages. This behavior mirrors the physical intuition that, in the early phase, a system is thermally unstable and more likely to escape from local energy minima due to thermal fluctuations.
+
+\subsubsection*{Core Idea}
+
+\begin{itemize}
+    \item The algorithm maintains a temperature $T$ that \textbf{decays over time}. At each iteration, a new state $S^*$ is generated from the current state $S$ by \textbf{flipping a randomly selected spin} (i.e., changing its sign).
+    
+    \item The energy difference is computed as
+    \[
+    \Delta E = H\left(S^*\right) - H\left(S\right),
+    \]
+    and the new state is \textbf{accepted with probability}
+    \[
+    P = \exp\left(-\frac{\Delta E}{T}\right).
+    \]
+    When $\Delta E < 0$, $P > 1$, so the new state is always accepted.
+    
+    \item The temperature $T$ typically follows an \textbf{exponential decay} schedule, for example:
+    \[
+    T \leftarrow \alpha T,\quad \alpha < 1.
+    \]
+    Alternatively, more complex decay schemes can be used.
+\end{itemize}
+
+\subsubsection*{Results}
+
+Experimental results show that when the random seed is set to \texttt{1}, the algorithm can reproduce the true optimal solution on the given data. However, using the commonly adopted seed value of \texttt{42} does not yield the global optimum.
+
+To evaluate the practical accuracy of the method, we tested it on the data generated before. The method achieved an accuracy of only \textbf{18.1\%}. Nevertheless, due to the inherent randomness of the algorithm, we can significantly improve accuracy by \textbf{repeating the optimization multiple times} and selecting the lowest energy result.
+
+And its advantage lies in the \textbf{short computation time}. The average time to complete one optimization is \textbf{1.56 ms}. Therefore, this method remains a viable and acceptable approach in practice.
+
+\subsection*{3. Semidefinite Programming (SDP) Relaxation}
+
+This method relaxes the original combinatorial optimization problem into an SDP problem, which is a convex optimization problem and hence polynomial-time solvable under fixed precision. The relaxed problem is then repeatedly projected back into the feasible set of the original discrete problem using randomized rounding, and the lowest-energy solution among all projections is selected as the final output.
+
+\subsubsection*{Core Idea}
+
+\begin{itemize}
+    \item First, introduce a matrix variable $X = SS^{T}$, then the objective function becomes
+    \[
+    H\left(S\right) = S^{T}JS = \mathrm{Tr}\left(JSS^{T}\right) = \mathrm{Tr}\left(JX\right)
+    \]
+    The original optimization problem is thus rewritten as:
+    \[
+    \begin{aligned}
+    \min_{X \in \mathbb{R}^{n \times n}} \quad & \mathrm{Tr}(JX) \\
+    \text{s.t.} \quad & \text{rank}(X) = 1, \quad X_{ii} = 1 \ \forall i, \quad X \succeq 0
+    \end{aligned}
+    \]
+    
+    \item Then, we \textbf{relax the rank constraint} $\text{rank}\left(X\right) = 1$, and keep only the diagonal constraints and the positive semidefiniteness constraint. This yields a convex \textbf{SDP relaxation}.
+    \item Solve the relaxed SDP using \texttt{cvxpy} or any SDP solver to obtain $X$, then perform a Cholesky decomposition or eigendecomposition to factorize $X = VV^{T}$, where $V \in \mathbb{R}^{n \times r}$.
+    \item Although $V$ does not yield a feasible spin configuration directly, it provides a lower bound on the ground state energy.
+    \item To recover a binary spin vector $\hat{S} \in \{-1, +1\}^n$, sample a Gaussian random vector $g \sim \mathcal{N}(0, I_r)$ and set
+    \[
+    \hat{S}_i = \text{sign}(V_i^{T}g)
+    \]
+    \item Repeat the above random projection step \texttt{num\_rounds} times, and return the spin configuration with the lowest energy among all rounds.
+\end{itemize}
+
+\subsubsection*{Results}
+
+On the \textit{given data}, using multiple random seeds consistently yields the true optimal solution. To evaluate the general applicability of this method, we also conduct tests on a large dataset. The results are as follows:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\texttt{num\_rounds} & 100 & 500 & 1000 & 10000 \\
+\hline
+Accuracy & 62.8\% & 74.4\% & 76.3\% & 79.9\% \\
+\hline
+\end{tabular}
+\end{center}
+
+The average time to complete one optimization is \textbf{19.3 ms}.
+
+In our experiments, setting \texttt{num\_rounds = 100} yields an accuracy of approximately \textbf{62.8\%}. Theoretically, increasing \texttt{num\_rounds} to 1000 should reduce the error rate to less than $5 \times 10^{-5}$ if each round is independent and identically distributed. However, the observed accuracy is only \textbf{76.3\%}, suggesting that in some instances (about $\frac{1}{5}$ to $\frac{1}{4}$) the SDP relaxation introduces the integrality gap.
+
+In our case (i.e., finding ground states of the Ising model), this integrality gap is not analytically bounded, but empirical evidence clearly suggests that for some instances, the SDP solution lies too far from any valid spin configuration, making it difficult for random projections to recover the true ground state, and thereby limiting the achievable accuracy.
+
+\subsection*{4. Hybrid strategy}
+
+\subsubsection*{Core Idea}
+
+To address the integrality gap issue, I propose a \textbf{hybrid strategy}. Since the solution obtained via SDP can sometimes get stuck in local optima of the discrete problem, we incorporate a \textbf{simulated annealing} approach to improve upon it.
+
+Specifically, we fix the number of projection rounds (\texttt{num\_rounds}) to 500. After obtaining a theoretically optimal solution from SDP, we use it as the starting point for simulated annealing. However, to prevent excessive perturbations, we set a \textbf{lower initial temperature}.
+
+This design ensures that if the SDP solution is trapped in a local optimum, it still has a chance to \textbf{escape}. On the other hand, if the solution is already globally optimal, even if it temporarily escapes, the annealing process will eventually return to the \textbf{globally optimal}.
+
+\subsubsection*{Result}
+
+To determine the appropriate initial temperature, I conducted experiments with four different values: \texttt{T\_init} $= 10.0$, $1.0$, $0.5$, and $0.1$. \texttt{num\_round} = $500$.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\texttt{T\_init} & 10.0 & 1.0 & 0.5 & 0.1 \\
+\hline
+Accuracy & 78.6\% & 83.2\% & 83.6\% & 82.4\% \\
+\hline
+\end{tabular}
+\end{center}
+
+The average time to complete one optimization is \textbf{20.7 ms}.
+
+It can be seen that compared to plain SDP relaxation, this method increases the computation time by less than one-tenth, while achieving an improvement of more than one-tenth in accuracy when $T_{\text{init}} \leq 1.0$. For accuracy values already close to 1, a gain of one-tenth constitutes a significant improvement.
+
+\subsection*{5. Other methods}
+
+I previously attempted a neural network-based strategy to directly model the spin optimization problem in fixed dimensions. The idea was to input the upper triangular part of the coupling matrix $J$ and output a multi-label classification representing the optimal spin configuration. This approach ultimately failed, as the spin labels are highly coupled and cannot be effectively treated as independent classification targets based on their indices.
+
+Due to the overall redundancy caused by multiple methods explored throughout the project, I performed a code refactoring. The dataset encoding used for this neural network approach was incompatible with the newly structured format, and thus the corresponding code was not preserved.
+
+Despite the failure, this attempt provided valuable insights. If one seeks to apply artificial intelligence to this problem, a more promising direction may involve using models to learn the flipping strategies in simulated annealing, or even to approximate the temperature schedule itself—potentially replacing the standard exponential decay with a learned curve. The goal would be to escape local minima more efficiently and reach the global optimum faster.
+
+\section*{Project Structure}
+
+\vspace{0.5cm}
+\dirtree{%
+.1 SherringtonKirkpatrick.
+.2 .gitignore.
+.2 README.md.
+.2 data.
+.3 generated\_data.pkl.
+.3 sk30Jij.npy.
+.3 sk\_data.bin.
+.2 src.
+.3 data\_manager.py.
+.3 exhaustive\_search.
+.4 CMakeLists.txt.
+.4 data.
+.5 sk30Jij.txt.
+.4 include.
+.5 solver.cuh.
+.4 src.
+.5 generate\_data.cpp.
+.5 result.cpp.
+.5 solver.cu.
+.3 methods.
+.4 \_\_init\_\_.py.
+.4 exhaustive\_search.py.
+.4 sdp\_relaxation.py.
+.4 simulated\_annealing.py.
+.3 npy2txt.py.
+.3 result.py.
+.3 test.py.
+}
+
+\section*{Usage Instructions}
+
+Both \texttt{result.py} and \texttt{test.py} in the \texttt{src} directory can be executed directly. The former evaluates performance on the \textbf{given data}, while the latter tests \textbf{accuracy and runtime} on the \textbf{generated dataset}.
+
+If you want to switch to a different dataset \textbf{without} using exhaustive search, you should modify \texttt{result.py} accordingly to correctly load your data.
+
+If you intend to use exhaustive search with a new dataset to find the true ground state energy, please follow these steps:
+
+\begin{enumerate}
+    \item \textbf{Ensure your system meets the requirements:}
+    \begin{itemize}
+        \item NVIDIA GPU
+        \item At least $\left(2^{N-29} + 2\right)$ GiB of GPU memory
+    \end{itemize}
+    
+    \item \textbf{Configure the CUDA environment:}
+    \begin{itemize}
+        \item Make sure the CUDA toolkit is properly installed. If \texttt{nvcc} is not in your system \texttt{PATH}, you must specify its location by setting the \texttt{nvcc\_path} variable in \texttt{methods.exhaustive\_search}.
+    \end{itemize}
+    
+    \item \textbf{Run the exhaustive search:}
+    \begin{itemize}
+        \item Either execute \texttt{exhaustive\_search.py} directly or set \texttt{run\_exhaustive\_search} to be True in \texttt{result.py} and then run \texttt{result.py}.
+    \end{itemize}
+    
+    \item \textbf{Optional – Use the C++ version:}
+    \begin{itemize}
+        \item A C++ implementation is provided for CUDA-based ground state computation and data generation. You can use \texttt{npy2txt.py} to convert coupling matrices to \texttt{.txt} format, then modify \texttt{CMakeLists.txt} and relevant paths before compiling and executing.
+    \end{itemize}
+\end{enumerate}
+
+\end{document}
