@@ -11,9 +11,9 @@ def data_generator(data_path=_data_path, data_name="generated_data.pkl", N=30, n
 
 	print("Starting data generation ...")
 	for i in range(num):
-		if (i + 1) ==num:
+		if (i + 1) == num:
 			print(f"  generating data {i+1}.")
-		elif (i + 1)%10==0:
+		elif (i + 1)%10 == 0:
 			print(f"  generating data {i+1};")
 		data.append(generate_one(N))
 
