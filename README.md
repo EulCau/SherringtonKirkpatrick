@@ -56,28 +56,28 @@ Due to the relatively small dimensionality of the input data (only 30 spins), it
 
 * First, note that the Hamiltonian satisfies the symmetry
 
-	$$
-	H\left(S\right) = H\left(-S\right),
-	$$
-	
-	which allows us to **fix the last spin to -1**, reducing the search space by half.
-	Similarly, for consistency, all later methods **only report one representative** of such symmetric configurations, and this property will not be reiterated.
+    $$
+    H\left(S\right) = H\left(-S\right),
+    $$
+
+    which allows us to **fix the last spin to -1**, reducing the search space by half.
+    Similarly, for consistency, all later methods **only report one representative** of such symmetric configurations, and this property will not be reiterated.
 
 * To avoid excessive data transfer and expensive configuration generation, each spin configuration is encoded as an unsigned long integer. Its binary representation (from least to most significant bit) corresponds to spins from the first to the last particle, with `0` representing spin $-1$ and `1` representing spin $+1$.
 
 * We compute the energy of all configurations in parallel, store the energies in a global array, and use a CPU reduction to find the minimum. The total work is
 
-	$$
-	O\left(N^2 \cdot 2^{N-1}\right),
-	$$
+    $$
+    O\left(N^2 \cdot 2^{N-1}\right),
+    $$
 
-	while the parallel span is
+    while the parallel span is
 
-	$$
-	O\left(N^2\right).
-	$$
-	
-	Although CUDA threads may not fully reduce the time complexity to $O\left(N^2\right)$ due to hardware constraints, thread multiplexing ensures the computation remains within practical bounds. The total expected time is on the order of **10 million operations**, which is well within the processing capability of modern GPUs.
+    $$
+    O\left(N^2\right).
+    $$
+
+    Although CUDA threads may not fully reduce the time complexity to $O\left(N^2\right)$ due to hardware constraints, thread multiplexing ensures the computation remains within practical bounds. The total expected time is on the order of **10 million operations**, which is well within the processing capability of modern GPUs.
 
 * The memory usage consists of storing the coupling matrix ($N^2$ floats) and the energy array ($2^{N-1}$ floats), totaling roughly **2 GiB** of VRAM. With additional overhead, a **4 GiB GPU** is sufficient.
 
@@ -98,7 +98,6 @@ with a corresponding minimum energy of -21.6217.
 
 Since this result is theoretically exact with 100% accuracy, no further datasets were tested using this method. From the data generation process, we can observe that the time required to find an optimal solution is approximately between 300 and 600 milliseconds.
 
-
 #### Generate Test Data
 
 To evaluate the accuracy of subsequent methods, we generate a large number of spin glass instances with known optimal solutions. Since the coupling matrix $J$ is symmetric with zero diagonal, only its upper triangular part (excluding the diagonal) needs to be specified, containing $\frac{N(N-1)}{2}$ elements.
@@ -110,9 +109,8 @@ $$J_{ij} \sim \mathcal{N}(0, 0.2^2), \quad \text{for } i < j.$$
 We generate 10,000 pairs of $J$ and their corresponding ground truth optimal spin configurations $S^*$. For storage:
 
 * The upper triangular part of each $J$ is flattened into a 1D array of length $\frac{N(N-1)}{2}$;
-* Each $S^{*}$ is stored as an integer, as described in the second point of the _Core Idea_ section;
+* Each $S^{*}$ is stored as an integer, as described in the second point of the *Core Idea* section;
 * The decoding procedures are implemented in the functions `flat2J` and `idx2result`, which reconstruct the full $J$ matrix and the corresponding spin configuration from the encoded format.
-
 
 ### 2. Simulated Annealing
 
@@ -124,25 +122,25 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
 
 * The energy difference is computed as
 
-	$$
-	\Delta E = H\left(S^*\right) - H\left(S\right),
-	$$
+    $$
+    \Delta E = H\left(S^*\right) - H\left(S\right),
+    $$
 
-	and the new state is **accepted with probability**
+    and the new state is **accepted with probability**
 
-	$$
-	P = \exp\left(-\frac{\Delta E}{T}\right).
-	$$
+    $$
+    P = \exp\left(-\frac{\Delta E}{T}\right).
+    $$
 
-	When $\Delta E < 0$, $P > 1$, so the new state is always accepted.
+    When $\Delta E < 0$, $P > 1$, so the new state is always accepted.
 
 * The temperature $T$ typically follows an **exponential decay** schedule, for example:
 
-	$$
-	T \leftarrow \alpha T,\quad \alpha < 1.
-	$$
-	
-	Alternatively, more complex decay schemes can be used.
+    $$
+    T \leftarrow \alpha T,\quad \alpha < 1.
+    $$
+
+    Alternatively, more complex decay schemes can be used.
 
 #### Results
 
@@ -206,7 +204,6 @@ Specifically, we fix the number of projection rounds (`num_rounds`) to 500. Afte
 
 This design ensures that if the SDP solution is trapped in a local optimum, it still has a chance to **escape**. On the other hand, if the solution is already globally optimal, even if it temporarily escapes, the annealing process will eventually return to the **globally optimal**.
 
-
 #### Result
 
 To determine the appropriate initial temperature, I conducted experiments with four different values: `T_init` $= 10.0$, $1.0$, $0.5$, and $0.1$. `num_round` = $500$.
@@ -227,7 +224,6 @@ Due to the overall redundancy caused by multiple methods explored throughout the
 
 Despite the failure, this attempt provided valuable insights. If one seeks to apply artificial intelligence to this problem, a more promising direction may involve using models to learn the flipping strategies in simulated annealing, or even to approximate the temperature schedule itself—potentially replacing the standard exponential decay with a learned curve. The goal would be to escape local minima more efficiently and reach the global optimum faster.
 
-
 ---
 
 ## Project Structure
@@ -237,29 +233,29 @@ SherringtonKirkpatrick
 ├── .gitignore
 ├── README.md
 ├── data
-│	├── generated_data.pkl
-│	├── sk30Jij.npy
-│	└── sk_data.bin
+│   ├── generated_data.pkl
+│   ├── sk30Jij.npy
+│   └── sk_data.bin
 └── src
-	├── data_manager.py
-	├── exhaustive_search
-	│	├── CMakeLists.txt
-	│	├── data
-	│	│	└── sk30Jij.txt
-	│	├── include
-	│	│	└── solver.cuh
-	│	└── src
-	│		├── generate_data.cpp
-	│		├── result.cpp
-	│		└── solver.cu
-	├── methods
-	│	├── __init__.py
-	│	├── exhaustive_search.py
-	│	├── sdp_relaxation.py
-	│	└── simulated_annealing.py
-	├── npy2txt.py
-	├── result.py
-	└── test.py
+    ├── data_manager.py
+    ├── exhaustive_search
+    │   ├── CMakeLists.txt
+    │   ├── data
+    │   │   └── sk30Jij.txt
+    │   ├── include
+    │   │   └── solver.cuh
+    │   └── src
+    │       ├── generate_data.cpp
+    │       ├── result.cpp
+    │       └── solver.cu
+    ├── methods
+    │   ├── __init__.py
+    │   ├── exhaustive_search.py
+    │   ├── sdp_relaxation.py
+    │   └── simulated_annealing.py
+    ├── npy2txt.py
+    ├── result.py
+    └── test.py
 ```
 
 ---
@@ -274,17 +270,17 @@ If you intend to use exhaustive search with a new dataset to find the true groun
 
 1. **Ensure your system meets the requirements:**
 
-	* NVIDIA GPU
-	* At least $\left(2^{N-29} + 2\right)$ GiB of GPU memory
+    * NVIDIA GPU
+    * At least $\left(2^{N-29} + 2\right)$ GiB of GPU memory
 
 2. **Configure the CUDA environment:**
 
-	Make sure the CUDA toolkit is properly installed. If `nvcc` is not in your system `PATH`, you must specify its location by setting the `nvcc_path` variable in `methods.exhaustive_search`.
+    Make sure the CUDA toolkit is properly installed. If `nvcc` is not in your system `PATH`, you must specify its location by setting the `nvcc_path` variable in `methods.exhaustive_search`.
 
 3. **Run the exhaustive search:**
 
-	Either execute `exhaustive_search.py` directly or set `run_exhaustive_search = True` in `result.py` and then run `result.py`.
+    Either execute `exhaustive_search.py` directly or set `run_exhaustive_search = True` in `result.py` and then run `result.py`.
 
 4. **Optional – Use the C++ version:**
 
-	A C++ implementation is provided for CUDA-based ground state computation and data generation. You can use `npy2txt.py` to convert coupling matrices to `.txt` format, then modify `CMakeLists.txt` and relevant paths before compiling and executing.
+    A C++ implementation is provided for CUDA-based ground state computation and data generation. You can use `npy2txt.py` to convert coupling matrices to `.txt` format, then modify `CMakeLists.txt` and relevant paths before compiling and executing.
