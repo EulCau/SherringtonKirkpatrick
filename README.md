@@ -122,25 +122,25 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
 
 * The energy difference is computed as
 
-    $$
-    \Delta E = H\left(S^*\right) - H\left(S\right),
-    $$
+  $$
+  \Delta E = H\left(S^*\right) - H\left(S\right),
+  $$
 
-    and the new state is **accepted with probability**
+  and the new state is **accepted with probability**
 
-    $$
-    P = \exp\left(-\frac{\Delta E}{T}\right).
-    $$
+  $$
+  P = \exp\left(-\frac{\Delta E}{T}\right).
+  $$
 
-    When $\Delta E < 0$, $P > 1$, so the new state is always accepted.
+  When $\Delta E < 0$, $P > 1$, so the new state is always accepted.
 
 * The temperature $T$ typically follows an **exponential decay** schedule, for example:
 
-    $$
-    T \leftarrow \alpha T,\quad \alpha < 1.
-    $$
+  $$
+  T \leftarrow \alpha T,\quad \alpha < 1.
+  $$
 
-    Alternatively, more complex decay schemes can be used.
+  Alternatively, more complex decay schemes can be used.
 
 #### Results
 
@@ -170,6 +170,7 @@ This method relaxes the original combinatorial optimization problem into an SDP 
   \text{s.t.} \quad & \text{rank}(X) = 1, \quad X_{ii} = 1 \ \forall i, \quad X \succeq 0
   \end{aligned}
   $$
+
 * Then, we **relax the rank constraint** $\text{rank}\left(X\right) = 1$, and keep only the diagonal constraints and the positive semidefiniteness constraint. This yields a convex **SDP relaxation**.
 * Solve the relaxed SDP using `cvxpy` or any SDP solver to obtain $X$, then perform a Cholesky decomposition or eigendecomposition to factorize $X = VV^{T}$, where $V \in \mathbb{R}^{n \times r}$.
 * Although $V$ does not yield a feasible spin configuration directly, it provides a lower bound on the ground state energy.
@@ -178,6 +179,7 @@ This method relaxes the original combinatorial optimization problem into an SDP 
   $$
   \hat{S}_i = \text{sign}(V_i^{T}g)
   $$
+
 * Repeat the above random projection step `num_rounds` times, and return the spin configuration with the lowest energy among all rounds.
 
 #### Results
@@ -270,17 +272,17 @@ If you intend to use exhaustive search with a new dataset to find the true groun
 
 1. **Ensure your system meets the requirements:**
 
-    * NVIDIA GPU
-    * At least $\left(2^{N-29} + 2\right)$ GiB of GPU memory
+ * NVIDIA GPU
+ * At least $\left(2^{N-29} + 2\right)$ GiB of GPU memory
 
 2. **Configure the CUDA environment:**
 
-    Make sure the CUDA toolkit is properly installed. If `nvcc` is not in your system `PATH`, you must specify its location by setting the `nvcc_path` variable in `methods.exhaustive_search`.
+  Make sure the CUDA toolkit is properly installed. If `nvcc` is not in your system `PATH`, you must specify its location by setting the `nvcc_path` variable in `methods.exhaustive_search`.
 
 3. **Run the exhaustive search:**
 
-    Either execute `exhaustive_search.py` directly or set `run_exhaustive_search = True` in `result.py` and then run `result.py`.
+  Either execute `exhaustive_search.py` directly or set `run_exhaustive_search = True` in `result.py` and then run `result.py`.
 
 4. **Optional – Use the C++ version:**
 
-    A C++ implementation is provided for CUDA-based ground state computation and data generation. You can use `npy2txt.py` to convert coupling matrices to `.txt` format, then modify `CMakeLists.txt` and relevant paths before compiling and executing.
+  A C++ implementation is provided for CUDA-based ground state computation and data generation. You can use `npy2txt.py` to convert coupling matrices to `.txt` format, then modify `CMakeLists.txt` and relevant paths before compiling and executing.
