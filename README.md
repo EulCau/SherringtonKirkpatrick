@@ -34,9 +34,10 @@ This problem holds significant importance in both combinatorial optimization and
 
 Traditional methods struggle to directly solve large-scale instances of the problem. Therefore, this project implements multiple optimization algorithms, including:
 
-* **Exhaustive Search** (CUDA-accelerated, used solely to identify the true minimum for benchmarking purposes)
+* **Exhaustive Search** (CUDA-accelerated)
 * **Simulated Annealing**
 * **Semidefinite Programming (SDP) Relaxation**
+* **Hybrid Strategy**
 * And others
 
 The goal is to compare the performance and effectiveness of these algorithms, providing a solid foundation for subsequent theoretical analysis and practical applications.
@@ -95,7 +96,8 @@ $$
 
 with a corresponding minimum energy of -21.6217.
 
-Since this result is theoretically exact with 100% accuracy, no further datasets were tested using this method.
+Since this result is theoretically exact with 100% accuracy, no further datasets were tested using this method. From the data generation process, we can observe that the time required to find an optimal solution is approximately between 300 and 600 milliseconds.
+
 
 #### Generate Test Data
 
@@ -118,7 +120,7 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
 
 #### Core Idea
 
-* The algorithm maintains a temperature $T$ that decays over time. At each iteration, a new state $S^*$ is generated from the current state $S$ by flipping a randomly selected spin (i.e., changing its sign).
+* The algorithm maintains a temperature $T$ that **decays over time**. At each iteration, a new state $S^*$ is generated from the current state $S$ by **flipping a randomly selected spin** (i.e., changing its sign).
 
 * The energy difference is computed as
 
@@ -126,7 +128,7 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
 	\Delta E = H\left(S^*\right) - H\left(S\right),
 	$$
 
-	and the new state is accepted with probability
+	and the new state is **accepted with probability**
 
 	$$
 	P = \exp\left(-\frac{\Delta E}{T}\right).
@@ -134,7 +136,7 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
 
 	When $\Delta E < 0$, $P > 1$, so the new state is always accepted.
 
-* The temperature $T$ typically follows an exponential decay schedule, for example:
+* The temperature $T$ typically follows an **exponential decay** schedule, for example:
 
 	$$
 	T \leftarrow \alpha T,\quad \alpha < 1.
@@ -142,15 +144,13 @@ Among all the implemented algorithms, Simulated Annealing is arguably the simple
 	
 	Alternatively, more complex decay schemes can be used.
 
-* In fact, as will be discussed in the **"Other Methods"** section, we plan to explore approaches where a neural network dynamically determines <font color='red'> whether to accept new states and/or how to decay the temperature. </font>
-
 #### Results
 
 Experimental results show that when the random seed is set to `1`, the algorithm can reproduce the true optimal solution on the given data. However, using the commonly adopted seed value of `42` does not yield the global optimum.
 
-To evaluate the practical accuracy of the method, we tested it on the data generated before. The method achieved an accuracy of only **18.1%**.
+To evaluate the practical accuracy of the method, we tested it on the data generated before. The method achieved an accuracy of only **18.1%**. Nevertheless, due to the inherent randomness of the algorithm, we can significantly improve accuracy by **repeating the optimization multiple times** and selecting the lowest energy result.
 
-Nevertheless, due to the inherent randomness of the algorithm, we can significantly improve accuracy by **repeating the optimization multiple times** and selecting the lowest energy result. Therefore, this method remains a viable and acceptable approach in practice.
+And its advantage lies in the **short computation time**. The average time to complete one optimization is **1.56 ms**. Therefore, this method remains a viable and acceptable approach in practice.
 
 ### 3. Semidefinite Programming (SDP) Relaxation
 
@@ -172,7 +172,7 @@ This method relaxes the original combinatorial optimization problem into an SDP 
   \text{s.t.} \quad & \text{rank}(X) = 1, \quad X_{ii} = 1 \ \forall i, \quad X \succeq 0
   \end{aligned}
   $$
-* Then, we relax the rank constraint $\text{rank}\left(X\right) = 1$, and keep only the diagonal constraints and the positive semidefiniteness constraint. This yields a convex SDP relaxation.
+* Then, we **relax the rank constraint** $\text{rank}\left(X\right) = 1$, and keep only the diagonal constraints and the positive semidefiniteness constraint. This yields a convex **SDP relaxation**.
 * Solve the relaxed SDP using `cvxpy` or any SDP solver to obtain $X$, then perform a Cholesky decomposition or eigendecomposition to factorize $X = VV^{T}$, where $V \in \mathbb{R}^{n \times r}$.
 * Although $V$ does not yield a feasible spin configuration directly, it provides a lower bound on the ground state energy.
 * To recover a binary spin vector $\hat{S} \in \{-1, +1\}^n$, sample a Gaussian random vector $g \sim \mathcal{N}(0, I_r)$ and set
@@ -190,6 +190,8 @@ On the *given data*, using multiple random seeds consistently yields the true op
 |:------------:|:-----:|:-----:|:-----:|:-----:|
 |   Accuracy   | 62.8% | 74.4% | 76.3% | 79.9% |
 
+The average time to complete one optimization is **19.3 ms**.
+
 In our experiments, setting `num_rounds = 100` yields an accuracy of approximately **62.8%**. Theoretically, increasing `num_rounds` to 1000 should reduce the error rate to less than $5 \times 10^{-5}$ if each round is independent and identically distributed. However, the observed accuracy is only **76.3%**, suggesting that in some instances (about $\frac{1}{5}$ to $\frac{1}{4}$) the SDP relaxation introduces the integrality gap.
 
 In our case (i.e., finding ground states of the Ising model), this integrality gap is not analytically bounded, but empirical evidence clearly suggests that for some instances, the SDP solution lies too far from any valid spin configuration, making it difficult for random projections to recover the true ground state, and thereby limiting the achievable accuracy.
@@ -198,15 +200,33 @@ In our case (i.e., finding ground states of the Ising model), this integrality g
 
 #### Core Idea
 
-blabla
+To address the integrality gap issue, I propose a **hybrid strategy**. Since the solution obtained via SDP can sometimes get stuck in local optima of the discrete problem, we incorporate a **simulated annealing** approach to improve upon it.
+
+Specifically, we fix the number of projection rounds (`num_rounds`) to 500. After obtaining a theoretically optimal solution from SDP, we use it as the starting point for simulated annealing. However, to prevent excessive perturbations, we set a **lower initial temperature**.
+
+This design ensures that if the SDP solution is trapped in a local optimum, it still has a chance to **escape**. On the other hand, if the solution is already globally optimal, even if it temporarily escapes, the annealing process will eventually return to the **globally optimal**.
+
 
 #### Result
 
-`num_round` is set to 500
+To determine the appropriate initial temperature, I conducted experiments with four different values: `T_init` $= 10.0$, $1.0$, $0.5$, and $0.1$. `num_round` = $500$.
 
 | `T_init` | 10.0  |  1.0  |  0.5  |  0.1  |
 |:--------:|:-----:|:-----:|:-----:|:-----:|
 | Accuracy | 78.6% | 83.2% | 83.6% | 82.4% |
+
+The average time to complete one optimization is **20.7 ms**.
+
+It can be seen that compared to plain SDP relaxation, this method increases the computation time by less than one-tenth, while achieving an improvement of more than one-tenth in accuracy when $T_{\text{init}} \leq 1.0$. For accuracy values already close to 1, a gain of one-tenth constitutes a significant improvement.
+
+### 5. Other methods
+
+I previously attempted a neural network-based strategy to directly model the spin optimization problem in fixed dimensions. The idea was to input the upper triangular part of the coupling matrix $J$ and output a multi-label classification representing the optimal spin configuration. This approach ultimately failed, as the spin labels are highly coupled and cannot be effectively treated as independent classification targets based on their indices.
+
+Due to the overall redundancy caused by multiple methods explored throughout the project, I performed a code refactoring. The dataset encoding used for this neural network approach was incompatible with the newly structured format, and thus the corresponding code was not preserved.
+
+Despite the failure, this attempt provided valuable insights. If one seeks to apply artificial intelligence to this problem, a more promising direction may involve using models to learn the flipping strategies in simulated annealing, or even to approximate the temperature schedule itself—potentially replacing the standard exponential decay with a learned curve. The goal would be to escape local minima more efficiently and reach the global optimum faster.
+
 
 ---
 
