@@ -1,5 +1,7 @@
 # Sherrington-Kirkpatrick model
 
+>Due to differences in Markdown rendering across platforms, you may refer to `report/report.pdf` instead.
+
 This project focuses on solving the ground state energy problem of the classical **Sherrington-Kirkpatrick (SK) model**. The SK model is a fundamental example of spin glass systems in statistical physics, defined by a set of interacting spin variables $S = \left(S_{1}, S_{2}, \dots, S_{N}\right)$, where each spin $S_{i}$ takes values $\pm 1$.
 
 The Hamiltonian (energy function) of the model is given by:
